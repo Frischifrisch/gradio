@@ -14,7 +14,7 @@ os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 class TestDefault:
     @pytest.mark.asyncio
     async def test_default_text(self):
-        max_word_len = lambda text: max([len(word) for word in text.split(" ")])
+        max_word_len = lambda text: max(len(word) for word in text.split(" "))
         text_interface = Interface(
             max_word_len, "textbox", "label", interpretation="default"
         )
@@ -28,7 +28,7 @@ class TestDefault:
 class TestShapley:
     @pytest.mark.asyncio
     async def test_shapley_text(self):
-        max_word_len = lambda text: max([len(word) for word in text.split(" ")])
+        max_word_len = lambda text: max(len(word) for word in text.split(" "))
         text_interface = Interface(
             max_word_len, "textbox", "label", interpretation="shapley"
         )
@@ -41,7 +41,7 @@ class TestShapley:
 class TestCustom:
     @pytest.mark.asyncio
     async def test_custom_text(self):
-        max_word_len = lambda text: max([len(word) for word in text.split(" ")])
+        max_word_len = lambda text: max(len(word) for word in text.split(" "))
         custom = lambda text: [(char, 1) for char in text]
         text_interface = Interface(
             max_word_len, "textbox", "label", interpretation=custom

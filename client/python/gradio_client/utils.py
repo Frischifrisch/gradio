@@ -186,7 +186,7 @@ def download_tmp_copy_of_file(
 ) -> tempfile._TemporaryFileWrapper:
     if dir is not None:
         os.makedirs(dir, exist_ok=True)
-    headers = {"Authorization": "Bearer " + hf_token} if hf_token else {}
+    headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
     prefix = Path(url_path).stem
     suffix = Path(url_path).suffix
     file_obj = tempfile.NamedTemporaryFile(
@@ -298,7 +298,7 @@ def decode_base64_to_file(encoding, file_path=None, dir=None, prefix=None):
         filename = Path(file_path).name
         prefix = filename
         if "." in filename:
-            prefix = filename[0 : filename.index(".")]
+            prefix = filename[:filename.index(".")]
             extension = filename[filename.index(".") + 1 :]
 
     if prefix is not None:
@@ -308,10 +308,7 @@ def decode_base64_to_file(encoding, file_path=None, dir=None, prefix=None):
         file_obj = tempfile.NamedTemporaryFile(delete=False, prefix=prefix, dir=dir)
     else:
         file_obj = tempfile.NamedTemporaryFile(
-            delete=False,
-            prefix=prefix,
-            suffix="." + extension,
-            dir=dir,
+            delete=False, prefix=prefix, suffix=f".{extension}", dir=dir
         )
     file_obj.write(data)
     file_obj.flush()

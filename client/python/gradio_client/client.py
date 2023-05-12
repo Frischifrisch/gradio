@@ -171,9 +171,8 @@ class Client:
             human_info += f"\nUnnamed API endpoints: {num_unnamed_endpoints}\n"
             for fn_index, endpoint_info in info["unnamed_endpoints"].items():
                 human_info += self._render_endpoints_info(fn_index, endpoint_info)
-        else:
-            if num_unnamed_endpoints > 0:
-                human_info += f"\nUnnamed API endpoints: {num_unnamed_endpoints}, to view, run Client.view_api(`all_endpoints=True`)\n"
+        elif num_unnamed_endpoints > 0:
+            human_info += f"\nUnnamed API endpoints: {num_unnamed_endpoints}, to view, run Client.view_api(`all_endpoints=True`)\n"
 
         print(human_info)
 
@@ -185,7 +184,7 @@ class Client:
         parameter_names = list(endpoints_info["parameters"].keys())
         rendered_parameters = ", ".join(parameter_names)
         if rendered_parameters:
-            rendered_parameters = rendered_parameters + ", "
+            rendered_parameters += ", "
         return_value_names = list(endpoints_info["returns"].keys())
         rendered_return_values = ", ".join(return_value_names)
         if len(return_value_names) > 1:
@@ -250,7 +249,7 @@ class Client:
         # some basic regex to extract the config
         result = re.search(r"window.gradio_config = (.*?);[\s]*</script>", r.text)
         try:
-            config = json.loads(result.group(1))  # type: ignore
+            config = json.loads(result[1])
         except AttributeError:
             raise ValueError(f"Could not get Gradio config from: {self.src}")
         if "allow_flagging" in config:
@@ -343,9 +342,7 @@ class Endpoint:
             inputs = self.serialize(*data)
             predictions = _predict(*inputs)
             outputs = self.deserialize(*predictions)
-            if len(self.dependency["outputs"]) == 1:
-                return outputs[0]
-            return outputs
+            return outputs[0] if len(self.dependency["outputs"]) == 1 else outputs
 
         return _inner
 
@@ -378,25 +375,21 @@ class Endpoint:
     def _predict_resolve(self, *data) -> Any:
         """Needed for gradio.load(), which has a slightly different signature for serializing/deserializing"""
         outputs = self.make_predict()(*data)
-        if len(self.dependency["outputs"]) == 1:
-            return outputs[0]
-        return outputs
+        return outputs[0] if len(self.dependency["outputs"]) == 1 else outputs
 
     def serialize(self, *data) -> Tuple:
         assert len(data) == len(
             self.serializers
         ), f"Expected {len(self.serializers)} arguments, got {len(data)}"
-        return tuple([s.serialize(d) for s, d in zip(self.serializers, data)])
+        return tuple(s.serialize(d) for s, d in zip(self.serializers, data))
 
     def deserialize(self, *data) -> Tuple:
         assert len(data) == len(
             self.deserializers
         ), f"Expected {len(self.deserializers)} outputs, got {len(data)}"
         return tuple(
-            [
-                s.deserialize(d, hf_token=self.hf_token)
-                for s, d in zip(self.deserializers, data)
-            ]
+            s.deserialize(d, hf_token=self.hf_token)
+            for s, d in zip(self.deserializers, data)
         )
 
     def _setup_serializers(self) -> Tuple[List[Serializable], List[Serializable]]:
@@ -495,10 +488,8 @@ class Job(Future):
     def cancel(self) -> bool:
         """Cancels the job."""
         if self.future.cancelled() or self.future.done():
-            pass
             return False
         elif self.future.running():
-            pass  # TODO: Handle this case
             return True
         else:
             return self.future.cancel()

@@ -108,7 +108,7 @@ class TestTextbox:
         iface = gr.Interface(lambda x: x[::-1], "textbox", "textbox")
         assert iface("Hello") == "olleH"
         iface = gr.Interface(
-            lambda sentence: max([len(word) for word in sentence.split()]),
+            lambda sentence: max(len(word) for word in sentence.split()),
             gr.Textbox(),
             "number",
             interpretation="default",
@@ -1463,7 +1463,7 @@ class TestNames:
     # This test ensures that `components.get_component_instance()` works correctly when instantiating from components
     def test_no_duplicate_uncased_names(self):
         subclasses = gr.components.Component.__subclasses__()
-        unique_subclasses_uncased = set([s.__name__.lower() for s in subclasses])
+        unique_subclasses_uncased = {s.__name__.lower() for s in subclasses}
         assert len(subclasses) == len(unique_subclasses_uncased)
 
 
@@ -2081,7 +2081,7 @@ def test_dataset_calls_as_example(*mocks):
             ]
         ],
     )
-    assert all([m.called for m in mocks])
+    assert all(m.called for m in mocks)
 
 
 cars = vega_datasets.data.cars()
