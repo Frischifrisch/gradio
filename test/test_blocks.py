@@ -151,7 +151,7 @@ class TestBlocksMethods:
 
     def test_partial_fn_in_config(self):
         def greet(name, formatter):
-            return formatter("Hello " + name + "!")
+            return formatter(f"Hello {name}!")
 
         greet_upper_case = partial(greet, formatter=capwords)
         with gr.Blocks() as demo:
@@ -222,7 +222,7 @@ class TestBlocksMethods:
                 background: black;
             }
         """
-        css = css * 5  # simulate a long css string
+        css *= 5
         block = gr.Blocks(css=css)
 
         assert block.css == css
@@ -268,8 +268,7 @@ class TestBlocksMethods:
             return 42
 
         def generator_function():
-            for index in range(10):
-                yield index
+            yield from range(10)
 
         with gr.Blocks() as demo:
 
@@ -395,7 +394,7 @@ class TestComponentsInBlocks:
         assert all(dependencies_on_load)
         assert len(dependencies_on_load) == 2
         # Queue should be explicitly false for these events
-        assert all([dep["queue"] is False for dep in demo.config["dependencies"]])
+        assert all(dep["queue"] is False for dep in demo.config["dependencies"])
 
     def test_io_components_attach_load_events_when_value_is_fn(self, io_components):
         io_components = [comp for comp in io_components if comp not in [gr.State]]
@@ -409,13 +408,15 @@ class TestComponentsInBlocks:
             dep for dep in interface.config["dependencies"] if dep["trigger"] == "load"
         ]
         assert len(dependencies_on_load) == len(io_components)
-        assert all([dep["every"] == 1 for dep in dependencies_on_load])
+        assert all(dep["every"] == 1 for dep in dependencies_on_load)
 
     def test_get_load_events(self, io_components):
         components = []
         with gr.Blocks() as demo:
-            for component in io_components:
-                components.append(component(value=lambda: None, every=1))
+            components.extend(
+                component(value=lambda: None, every=1)
+                for component in io_components
+            )
         assert [comp.load_event for comp in components] == demo.dependencies
 
 
@@ -441,7 +442,8 @@ class TestBlocksPostprocessing:
             0, [gr.update(value=None) for _ in io_components], state={}
         )
         assert all(
-            [o["value"] == c.postprocess(None) for o, c in zip(output, io_components)]
+            o["value"] == c.postprocess(None)
+            for o, c in zip(output, io_components)
         )
 
     def test_blocks_does_not_replace_keyword_literal(self):
@@ -572,11 +574,7 @@ class TestCallFunction:
         with gr.Blocks() as demo:
             text = gr.Textbox()
             btn = gr.Button()
-            btn.click(
-                lambda x: "Hello, " + x,
-                inputs=text,
-                outputs=text,
-            )
+            btn.click(lambda x: f"Hello, {x}", inputs=text, outputs=text)
 
         output = await demo.call_function(0, ["World"])
         assert output["prediction"] == "Hello, World"
@@ -592,16 +590,8 @@ class TestCallFunction:
             text = gr.Textbox()
             text2 = gr.Textbox()
             btn = gr.Button()
-            btn.click(
-                lambda x: "Hello, " + x,
-                inputs=text,
-                outputs=text,
-            )
-            text.change(
-                lambda x: "Hi, " + x,
-                inputs=text,
-                outputs=text2,
-            )
+            btn.click(lambda x: f"Hello, {x}", inputs=text, outputs=text)
+            text.change(lambda x: f"Hi, {x}", inputs=text, outputs=text2)
 
         output = await demo.call_function(0, ["World"])
         assert output["prediction"] == "Hello, World"
@@ -616,8 +606,7 @@ class TestCallFunction:
     @pytest.mark.asyncio
     async def test_call_generator(self):
         def generator(x):
-            for i in range(x):
-                yield i
+            yield from range(x)
 
         with gr.Blocks() as demo:
             inp = gr.Number()
@@ -735,7 +724,7 @@ class TestBatchProcessing:
         def batch_fn(x):
             results = []
             for word in x:
-                results.append("Hello " + word)
+                results.append(f"Hello {word}")
             return (results,)
 
         with gr.Blocks() as demo:
@@ -796,7 +785,7 @@ class TestBatchProcessing:
             def batch_fn(x):
                 results = []
                 for word in x:
-                    results.append("Hello " + word)
+                    results.append(f"Hello {word}")
                     yield (results,)
 
             with gr.Blocks() as demo:
@@ -813,7 +802,7 @@ class TestBatchProcessing:
             def batch_fn(x):
                 results = []
                 for word in x:
-                    results.append("Hello " + word)
+                    results.append(f"Hello {word}")
                 return (results,)
 
             with gr.Blocks() as demo:
@@ -832,7 +821,7 @@ class TestBatchProcessing:
             def batch_fn(x, y):
                 results = []
                 for word1, word2 in zip(x, y):
-                    results.append("Hello " + word1 + word2)
+                    results.append(f"Hello {word1}{word2}")
                 return (results,)
 
             with gr.Blocks() as demo:

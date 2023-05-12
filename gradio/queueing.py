@@ -90,11 +90,7 @@ class Queue:
         self.access_token = token
 
     def get_active_worker_count(self) -> int:
-        count = 0
-        for worker in self.active_jobs:
-            if worker is not None:
-                count += 1
-        return count
+        return sum(1 for worker in self.active_jobs if worker is not None)
 
     def get_events_in_batch(self) -> Tuple[List[Event] | None, bool]:
         if not (self.event_queue):
@@ -122,7 +118,7 @@ class Queue:
                 await asyncio.sleep(self.sleep_when_free)
                 continue
 
-            if not (None in self.active_jobs):
+            if None not in self.active_jobs:
                 await asyncio.sleep(self.sleep_when_free)
                 continue
             # Using mutex to avoid editing a list in use
@@ -330,7 +326,7 @@ class Queue:
                 if event.data
             ]
             data.batched = True
-        response = await AsyncRequest(
+        return await AsyncRequest(
             method=AsyncRequest.Method.POST,
             url=f"{self.server_path}api/predict",
             json=dict(data),
@@ -338,7 +334,6 @@ class Queue:
             cookies={"access-token": token} if token is not None else None,
             client=self.queue_client,
         )
-        return response
 
     async def process_events(self, events: List[Event], batch: bool) -> None:
         awake_events: List[Event] = []
@@ -394,11 +389,7 @@ class Queue:
                         return
                     response = await self.call_prediction(awake_events, batch)
                 for event in awake_events:
-                    if response.status != 200:
-                        relevant_response = response
-                    else:
-                        relevant_response = old_response
-
+                    relevant_response = response if response.status != 200 else old_response
                     await self.send_message(
                         event,
                         {

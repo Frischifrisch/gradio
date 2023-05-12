@@ -62,21 +62,18 @@ def get_first_available_port(initial: int, final: int) -> int:
         except OSError:
             pass
     raise OSError(
-        "All ports from {} to {} are in use. Please close a port.".format(
-            initial, final - 1
-        )
+        f"All ports from {initial} to {final - 1} are in use. Please close a port."
     )
 
 
 def configure_app(app: App, blocks: Blocks) -> App:
     auth = blocks.auth
-    if auth is not None:
-        if not callable(auth):
-            app.auth = {account[0]: account[1] for account in auth}
-        else:
-            app.auth = auth
-    else:
+    if auth is None:
         app.auth = None
+    elif not callable(auth):
+        app.auth = {account[0]: account[1] for account in auth}
+    else:
+        app.auth = auth
     app.blocks = blocks
     app.cwd = os.getcwd()
     app.favicon_path = blocks.favicon_path
@@ -120,23 +117,21 @@ def start_server(
             s.close()
         except OSError:
             raise OSError(
-                "Port {} is in use. If a gradio.Blocks is running on the port, you can close() it or gradio.close_all().".format(
-                    server_port
-                )
+                f"Port {server_port} is in use. If a gradio.Blocks is running on the port, you can close() it or gradio.close_all()."
             )
         port = server_port
 
     url_host_name = "localhost" if server_name == "0.0.0.0" else server_name
 
-    if ssl_keyfile is not None:
-        if ssl_certfile is None:
-            raise ValueError(
-                "ssl_certfile must be provided if ssl_keyfile is provided."
-            )
-        path_to_local_server = "https://{}:{}/".format(url_host_name, port)
-    else:
-        path_to_local_server = "http://{}:{}/".format(url_host_name, port)
+    if ssl_keyfile is None:
+        path_to_local_server = f"http://{url_host_name}:{port}/"
 
+    elif ssl_certfile is None:
+        raise ValueError(
+            "ssl_certfile must be provided if ssl_keyfile is provided."
+        )
+    else:
+        path_to_local_server = f"https://{url_host_name}:{port}/"
     app = App.create_app(blocks)
 
     if blocks.save_to is not None:  # Used for selenium tests
@@ -165,8 +160,7 @@ def setup_tunnel(local_host: str, local_port: int, share_token: str) -> str:
             tunnel = Tunnel(
                 remote_host, remote_port, local_host, local_port, share_token
             )
-            address = tunnel.start_tunnel()
-            return address
+            return tunnel.start_tunnel()
         except Exception as e:
             raise RuntimeError(str(e))
     else:
@@ -179,7 +173,7 @@ def url_ok(url: str) -> bool:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
                 r = requests.head(url, timeout=3, verify=False)
-            if r.status_code in (200, 401, 302):  # 401 or 302 if auth is set
+            if r.status_code in {200, 401, 302}:  # 401 or 302 if auth is set
                 return True
             time.sleep(0.500)
     except (ConnectionError, requests.exceptions.ConnectionError):

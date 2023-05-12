@@ -198,7 +198,7 @@ class FileSerializable(Serializable):
             if x.get("is_file", False):
                 if root_url is not None:
                     file_name = utils.download_tmp_copy_of_file(
-                        root_url + "file=" + x["name"],
+                        f"{root_url}file=" + x["name"],
                         hf_token=hf_token,
                         dir=save_dir,
                     ).name
@@ -234,9 +234,7 @@ class JSONSerializable(Serializable):
             x: String path to json file to read to get json string
             load_dir: Path to directory containing x
         """
-        if x is None or x == "":
-            return None
-        return utils.file_to_json(Path(load_dir) / x)
+        return None if x is None or x == "" else utils.file_to_json(Path(load_dir) / x)
 
     def deserialize(
         self,
@@ -293,7 +291,7 @@ class GallerySerializable(Serializable):
         gallery_path.mkdir(exist_ok=True, parents=True)
         captions = {}
         for img_data in x:
-            if isinstance(img_data, list) or isinstance(img_data, tuple):
+            if isinstance(img_data, (list, tuple)):
                 img_data, caption = img_data
             else:
                 caption = None
